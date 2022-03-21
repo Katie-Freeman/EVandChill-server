@@ -1,0 +1,31 @@
+{
+    "name": "evandchill-server",
+    "version": "1.0.0",
+    "description": "Backend for EV and Chill",
+    "main": "app.js",
+    "scripts": {
+        "dev": "nodemon app.js",
+        "start": "node app.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jon-cundiff/EVandChill-server.git"
+    },
+    "author": "Jon Cundiff, Katie Freeman, Phil Slater",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/jon-cundiff/EVandChill-server/issues"
+    },
+    "homepage": "https://github.com/jon-cundiff/EVandChill-server#readme",
+    "dependencies": {
+        "bcrypt": "^5.0.1",
+        "cookie-parser": "^1.4.6",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.0",
+        "express": "^4.17.3",
+        "mongoose": "^6.2.7"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.15"
+    }
+}
