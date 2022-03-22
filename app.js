@@ -9,10 +9,6 @@ const cookieParser = require("cookie-parser");
 const PORT = process.env.PORT || 8080;
 const MONGOURL = process.env.MONGO_URL;
 
-const latLongFromLocation = require('./util/locationToCoords')
-
-latLongFromLocation('86134')
-
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE));
 app.use('/station', require('./routes/station.js'));
