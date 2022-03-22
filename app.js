@@ -15,6 +15,7 @@ latLongFromLocation('86134')
 
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE));
+app.use('/station', require('./routes/station.js'));
 
 const whitelist = process.env.WHITELIST ? process.env.WHITELIST.split(",") : [];
 app.use(
