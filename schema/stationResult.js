@@ -12,7 +12,8 @@ const stationResultSchema = new mongoose.Schema({
                 ref: 'Station'
             }
         }
-    ]
+    ],
+    dateUpdated: Number //Date.now() milliseconds
 
 });
 

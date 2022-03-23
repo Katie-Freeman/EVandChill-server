@@ -2,10 +2,11 @@
 const mongoose = require('mongoose');
 
 const stationSchema = new mongoose.Schema({
-    externalId: String, //id from HERE
-    lastUpdated: String, //HERE lastUpdatedTimestamp
+    externalId: String, // id from HERE
+    lastUpdated: String, // HERE lastUpdatedTimestamp
     name: String,
     address: String,
+    coordinates: String, // HERE lat/lng - rounded to nearest tenth
     images: [
         {
             imageUrl: String,
