@@ -2,12 +2,13 @@
 const mongoose = require('mongoose');
 
 const stationSchema = new mongoose.Schema({
-    externalId: String,
+    externalId: String, //id from HERE
     lastUpdated: String, //HERE lastUpdatedTimestamp
+    name: String,
     address: String,
     images: [
         {
-            imgageUrl: String,
+            imageUrl: String,
             user: {
                 type: Schema.Types.ObjectId,
                 ref: 'User'
@@ -35,7 +36,7 @@ const stationSchema = new mongoose.Schema({
     ],
     operatingHours: String,
     amenities: {
-        lastUpdated: String, //when search was last performed
+        lastUpdated: Number, //when search was last performed - Date.now() milliseconds
         restaurants: [
             {
                 name: String,

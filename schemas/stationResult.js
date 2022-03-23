@@ -5,7 +5,14 @@ const stationResultSchema = new mongoose.Schema({
 
     location: String,
     distance: Number,
-    response: [String]
+    response: [
+        {
+            station: {
+                type: Schema.Types.ObjectId,
+                ref: 'Station'
+            }
+        }
+    ]
 
 });
 
