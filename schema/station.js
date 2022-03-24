@@ -20,11 +20,11 @@ const stationSchema = new mongoose.Schema({
         }
     ],
     plugTypes: [
-        {
-            type: String,
-            speed: String,
-            quantity: Number
-        }
+        // {
+        //     type: String,
+        //     speed: Number,
+        //     quantity: Number
+        // }
     ],
     supportNumber: String,
     reviews: [
