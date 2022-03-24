@@ -14,13 +14,22 @@ const instance = axios.create({
 // search by zip code, city/state or user's location
 router.post('/stations', async (req, res) => {
 
+    // const stations = checkDBForStations(location)
+    // if (stations) {
+    //     // stations are in DB and less than 24 hrs old, use these
+    // } else {
+    //     // ask the API for stations, add to DB
+    // }
+
     if (req.body.searchBox) {
         // city or zip entered in search
         const location = await latLongFromLocation(req.body.searchBox)
         try {
             console.log(location)
             const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
-            // console.log(response.data)
+            // SAVE TO DB
+            saveStationsToDB(response.data)
+            //console.log(response.data)
             res.json(response.data)
         } catch (err) {
             console.log(err)
@@ -29,21 +38,12 @@ router.post('/stations', async (req, res) => {
     } else {
         // search by user's location
         try {
-            const response = await instance.get(`&latitude=${req.body.latitude}&longitude=${req.body.longitude}&maxresults=10`)
+            const response = await instance.get(`&maxresults=10&latitude=${req.body.latitude}&longitude=${req.body.longitude}`)
             res.json(response)
         } catch (err) {
             console.log(err)
         }
     }
-
-    // const stations = await StationResult.findOne({ location: location })
-    // if (stations) {
-    //     // coords result is in DB, pull info from there
-    //     console.log(true)
-    // } else {
-    //     // ask HERE API for stations, add to DB
-
-    // }
 
 })
 
@@ -80,7 +80,7 @@ router.delete('/remove-favorite', async (req, res) => {
     const username = req.body.username
 
     const user = await User.findOne({ username: username }) // or however the JWT is set up
-    //console.log(user)
+
     if (user) {
         try {
             // remove favorite with pull
@@ -104,6 +104,38 @@ router.delete('/remove-favorite', async (req, res) => {
 router.post('/add-photo', async (req, res) => {
 
 })
+
+// FUNCTIONS
+
+const checkDBForStations = (coords) => {
+
+}
+
+const saveStationsToDB = (stations) => {
+    console.log('saving...')
+    //const options = { upsert: true, new: true, setDefaultsOnInsert: true }
+    stations.forEach(async station => {
+        const connections = station.Connections.map(connection =>
+        ({
+            type: connection.ConnectionType.Title,
+            speed: connection.ConnectionType.ID
+        }))
+        console.log(connections)
+
+        await Station.create({
+            externalId: station.UUID,
+            lastUpdated: station.DataProvider.DateLastImported,
+            name: station.AddressInfo.Title,
+            address: `${station.AddressInfo.AddressLine1} ${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`,
+            latitude: station.AddressInfo.Latitude.toFixed(1),
+            longitude: station.AddressInfo.Longitude.toFixed(1),
+            plugTypes: connections,
+            supportNumber: station.OperatorInfo ? station.OperatorInfo.PhonePrimaryContact ? station.OperatorInfo.PhonePrimaryContact : null : null,
+            operatingHours: station.AddressInfo.AccessComments ? station.AddressInfo.AccessComments : null
+        })
+        // await Station.deleteMany({})
+    })
+}
 
 module.exports = router;
 
