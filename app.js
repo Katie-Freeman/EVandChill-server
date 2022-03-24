@@ -13,7 +13,10 @@ const MONGOURL = process.env.MONGO_URL;
 
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE));
+
+// ROUTES
 app.use('/station', require('./routes/station.js'));
+app.use('/profile', require('./routes/profile.js'));
 
 const whitelist = process.env.WHITELIST ? process.env.WHITELIST.split(",") : [];
 app.use(
@@ -46,6 +49,7 @@ app.post("/login", async (req, res) => {
     const user = await User.findOne({
         username: username
     })
+
     if (user) {
         bcrypt.compare(password, user.password, (err, result) => {
             if (result) {
@@ -63,27 +67,30 @@ app.post("/login", async (req, res) => {
     }
 });
 
-app.post('register', async (req, res) => {
-    const username = req.body.username
-    const password = req.body.username
+app.post('/register', async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.username;
+    const email = req.body.email;
 
     const user = await User.findOne({
-        username: username,
+        username: username
     })
+
     if (user) {
         res.json({ success: false, message: 'Username already exisits!' })
     } else {
-        bcrypt.genSalt(10, function (err, salt) {
-            bcrypt.hash(password, salt, function (err, hash) {
-
+        const hashedPassword = await bcrypt.hash(password, 10)
+        try {
+            const user = await User.create({
+                username: username,
+                password: hashedPassword,
+                email: email
             })
-        })
-    }
-    user.save((error) => {
-        if (error) {
-            res.json({ success: false, message: error })
-        } else {
-            res.json({ success: true, message: "User has been saved!" })
+            if (user) {
+                res.json({ success: true, message: "User has been saved!" })
+            }
+        } catch (err) {
+            console.log(err)
         }
-    })
+    }
 })

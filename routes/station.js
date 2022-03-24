@@ -1,8 +1,9 @@
 require("dotenv").config();
 const express = require("express")
 const router = express.Router()
-//const Station = require('../schema/station')
+const Station = require('../schema/station')
 const StationResult = require('../schema/stationResult')
+const User = require('../schema/user')
 const latLongFromLocation = require('../util/locationToCoords')
 const axios = require('axios');
 
@@ -47,7 +48,7 @@ router.post('/stations', async (req, res) => {
 })
 
 router.post('/add-favorite', async (req, res) => {
-    const station = req.body.station
+    const stationNumber = req.body.stationNumber
     const username = req.body.username
 
     const user = await User.findOne({ username: username }) // or however the JWT is set up
@@ -55,17 +56,49 @@ router.post('/add-favorite', async (req, res) => {
     if (user) {
         try {
             // add to favorites list of logged in user
+            user.favorites.push({
+                stationId: stationNumber,
+                user: user._id
+            })
+            const saved = await user.save()
+            if (saved) {
+                res.json({ success: true, message: 'Added to favorites.' })
+            } else {
+                res.json({ success: false, message: 'Error!' })
+            }
         } catch (err) {
             console.log(err)
         }
+    } else {
+        // user does not exist
+        res.json({ success: false, message: 'Invalid username.' })
     }
 })
 
 router.delete('/remove-favorite', async (req, res) => {
-    const station = req.body.station
+    const favoriteId = req.body.favoriteId
     const username = req.body.username
 
-    // delete from User favorites by station
+    const user = await User.findOne({ username: username }) // or however the JWT is set up
+    //console.log(user)
+    if (user) {
+        try {
+            // remove favorite with pull
+            user.favorites.pull(favoriteId)
+            const saved = await user.save()
+            if (saved) {
+                res.json({ success: true, message: 'Removed from favorites.' })
+            } else {
+                res.json({ success: false, message: 'Error!' })
+            }
+
+        } catch (err) {
+            console.log(err)
+        }
+    } else {
+        // user does not exist
+        res.json({ success: false, message: 'Invalid username.' })
+    }
 })
 
 router.post('/add-photo', async (req, res) => {

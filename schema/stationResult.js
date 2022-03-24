@@ -1,18 +1,19 @@
 
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
 const stationResultSchema = new mongoose.Schema({
 
     location: String,
     distance: Number,
-    // response: [
-    //     {
-    //         station: {
-    //             type: Schema.Types.ObjectId,
-    //             ref: 'Station'
-    //         }
-    //     }
-    // ],
+    response: [
+        {
+            station: {
+                type: Schema.Types.ObjectId,
+                ref: 'Station'
+            }
+        }
+    ],
     dateUpdated: Number //Date.now() milliseconds
 
 });
