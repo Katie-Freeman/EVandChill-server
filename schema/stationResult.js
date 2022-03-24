@@ -8,11 +8,12 @@ const stationResultSchema = new mongoose.Schema({
     response: [
         {
             station: {
-                type: Schema.Types.ObjectId,
+                type: mongoose.Schema.Types.ObjectId,
                 ref: 'Station'
             }
         }
-    ]
+    ],
+    dateUpdated: Number //Date.now() milliseconds
 
 });
 

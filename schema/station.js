@@ -1,11 +1,14 @@
 
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
 const stationSchema = new mongoose.Schema({
-    externalId: String, //id from HERE
-    lastUpdated: String, //HERE lastUpdatedTimestamp
+    externalId: String, // id from OCM
+    lastUpdated: String, // OCM DataProvider.DateLastImported
     name: String,
     address: String,
+    latitude: Number, // OCM lat/lng - rounded to nearest tenth
+    longitude: Number,
     images: [
         {
             imageUrl: String,
