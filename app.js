@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const User = require("./schema/user");
-const bcrypt= require('bcrypt')
+const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const PORT = process.env.PORT || 8080;
 const MONGOURL = process.env.MONGO_URL;
@@ -39,51 +39,51 @@ mongoose.connect(MONGOURL, () => {
     );
 });
 
-app.post("/login", async, (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
+app.post("/login", async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
 
- const user = await User.findOne({
-      username: username
+    const user = await User.findOne({
+        username: username
     })
     if (user) {
-        bcrypt.compare(password, user.password,(err, result)=> {
-            if(result) {
+        bcrypt.compare(password, user.password, (err, result) => {
+            if (result) {
                 const token = jwt.sign(
-                    {username:user.username } ,
+                    { username: user.username },
                     process.env.JWT
                 )
-                res.json({success:true, user:user, token:token})
-            }else {
-                res.json({success: faulse, message: "Not Auuthenticated"})
+                res.json({ success: true, user: user, token: token })
+            } else {
+                res.json({ success: false, message: "Not Auuthenticated" })
             }
         })
-        }else {
-            res.json({success: false, message: "Authenticaton failed"})
-        }
-    });
+    } else {
+        res.json({ success: false, message: "Authenticaton failed" })
+    }
+});
 
-app.post('register', async, (req, res) =>{
-    const username= req.body.username
-    const password= req.body.username
+app.post('register', async (req, res) => {
+    const username = req.body.username
+    const password = req.body.username
 
-     const user = await User.findOne({
-       username: username,
-     })
-     if(user) {
-         res.json({ success: false, message: 'Username already exisits!'})
-     }else {
-         bcrypt.genSalt(10, function (err, salt) {
-             bcrypt.hash(password, salt, function (err, hash) {
-                
-             })
-         })
-     }
-     user.save((error) => {
-         if(error) {
-             res.json({success:false, message: error})
-            }else {
-                res.json({success:true, message: "User has been saved!"})
-                }
+    const user = await User.findOne({
+        username: username,
+    })
+    if (user) {
+        res.json({ success: false, message: 'Username already exisits!' })
+    } else {
+        bcrypt.genSalt(10, function (err, salt) {
+            bcrypt.hash(password, salt, function (err, hash) {
+
             })
+        })
+    }
+    user.save((error) => {
+        if (error) {
+            res.json({ success: false, message: error })
+        } else {
+            res.json({ success: true, message: "User has been saved!" })
+        }
+    })
 })
