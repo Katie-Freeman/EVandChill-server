@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-
+const { Schema } = mongoose;
 const stationResultSchema = new mongoose.Schema({
 
     location: String,
@@ -8,7 +8,7 @@ const stationResultSchema = new mongoose.Schema({
     response: [
         {
             station: {
-                type: mongoose.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: 'Station'
             }
         }
