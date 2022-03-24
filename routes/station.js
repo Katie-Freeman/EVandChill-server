@@ -1,36 +1,48 @@
 require("dotenv").config();
 const express = require("express")
 const router = express.Router()
-const Station = require('../schema/station')
+//const Station = require('../schema/station')
 const StationResult = require('../schema/stationResult')
 const latLongFromLocation = require('../util/locationToCoords')
+const axios = require('axios');
 
 const instance = axios.create({
-    baseURL: 'https://ev-v2.cc.api.here.com/ev/stations.json?',
-    headers: `Authorization: Bearer ${process.env.EV_API}`
+    baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`
 })
 
 // search by zip code, city/state or user's location
-router.get('/stations', async (req, res) => {
+router.post('/stations', async (req, res) => {
 
-    let location = ''
     if (req.body.searchBox) {
         // city or zip entered in search
-        location = latLongFromLocation(req.body.searchBox)
+        const location = await latLongFromLocation(req.body.searchBox)
+        try {
+            console.log(location)
+            const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
+            // console.log(response.data)
+            res.json(response.data)
+        } catch (err) {
+            console.log(err)
+        }
+
     } else {
         // search by user's location
-        location = req.body.coords
+        try {
+            const response = await instance.get(`&latitude=${req.body.latitude}&longitude=${req.body.longitude}&maxresults=10`)
+            res.json(response)
+        } catch (err) {
+            console.log(err)
+        }
     }
 
-    const stations = await StationResult.findOne({ location: location })
-    if (stations) {
-        // coords result is in DB, pull info from there
-    } else {
-        // ask HERE API for stations, add to DB
-        const response = instance.get(`prox=${location.lat},${location.lng},5000`)
-        res.json(response)
+    // const stations = await StationResult.findOne({ location: location })
+    // if (stations) {
+    //     // coords result is in DB, pull info from there
+    //     console.log(true)
+    // } else {
+    //     // ask HERE API for stations, add to DB
 
-    }
+    // }
 
 })
 
@@ -59,6 +71,8 @@ router.delete('/remove-favorite', async (req, res) => {
 router.post('/add-photo', async (req, res) => {
 
 })
+
+module.exports = router;
 
 
 
