@@ -54,7 +54,8 @@ router.post("/register", async (req, res) => {
     if (user) {
         res.status(400).json({
             success: false,
-            message: "Username already exisits!",
+            userTaken: true,
+            message: "Username already exists!",
         });
     } else {
         bcrypt.genSalt(10, function (err, salt) {
