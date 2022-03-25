@@ -28,8 +28,9 @@ router.post("/login", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   const username = req.body.username;
-  const password = req.body.username;
-
+  const email = req.body.email;
+  const password = req.body.password;
+  console.log("Registering");
   const user = await User.findOne({
     username: username,
   });
@@ -37,16 +38,26 @@ router.post("/register", async (req, res) => {
     res.json({ success: false, message: "Username already exisits!" });
   } else {
     bcrypt.genSalt(10, function (err, salt) {
-      bcrypt.hash(password, salt, function (err, hash) {});
+      bcrypt.hash(password, salt, function (err, hash) {
+        const user = new User({
+          username: username,
+          email: email,
+          password: hash,
+        });
+        user.save((error) => {
+          if (error) {
+            res.json({ success: false, message: error });
+          } else {
+            res.json({ success: true, message: "User has been saved!" });
+          }
+        });
+      });
     });
   }
-  user.save((error) => {
-    if (error) {
-      res.json({ success: false, message: error });
-    } else {
-      res.json({ success: true, message: "User has been saved!" });
-    }
-  });
 });
+
+router.delete('/favorites', (req, res) => {
+    
+})
 
 module.exports = router;

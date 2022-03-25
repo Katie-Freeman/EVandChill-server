@@ -3,7 +3,8 @@ const express = require("express")
 const router = express.Router()
 const User = require('../schema/user')
 
-router.get('/my-favorites', async (req, res) => {
+router.get('/:username/my-favorites', async (req, res) => {
+    const username = req.params.username
     const user = await User.findOne({ username: username })
     if (user) {
 
