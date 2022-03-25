@@ -1,7 +1,6 @@
 
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-
 const stationResultSchema = new mongoose.Schema({
 
     location: String,

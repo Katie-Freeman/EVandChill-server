@@ -5,8 +5,8 @@ const User = require('../schema/user')
 const bcrypt = require('bcrypt');
 const Station = require("../schema/station");
 
-router.get('/my-favorites', async (req, res) => {
-    const username = req.body.username
+router.get('/:username/my-favorites', async (req, res) => {
+    const username = req.params.username
     const user = await User.findOne({ username: username })
     if (user) {
         res.json({ success: true, favorites: user.favorites })
@@ -15,7 +15,7 @@ router.get('/my-favorites', async (req, res) => {
     }
 })
 
-router.get('/my-reviews', async (req, res) => {
+router.get('/:username/my-reviews', async (req, res) => {
     const username = req.body.username
     const user = await User.findOne({ username: username })
     if (user) {
