@@ -13,36 +13,24 @@ const instance = axios.create({
 
 // search by zip code, city/state or user's location
 router.post('/stations', async (req, res) => {
+    const { zip, cityState, latitude, longitude } = req.body
+    let location = { lat: latitude, lng: longitude }
 
-    // const stations = checkDBForStations(location)
-    // if (stations) {
-    //     // stations are in DB and less than 24 hrs old, use these
-    // } else {
-    //     // ask the API for stations, add to DB
-    // }
-
-    if (req.body.searchBox) {
-        // city or zip entered in search
-        const location = await latLongFromLocation(req.body.searchBox)
-        try {
-            console.log(location)
-            const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
-            // SAVE TO DB
-            saveStationsToDB(response.data)
-            //console.log(response.data)
-            res.json(response.data)
-        } catch (err) {
-            console.log(err)
+    if (!location.lat || !location.lng) {
+        if (zip) {
+            location = await latLongFromLocation(zip)
+        } else if (cityState) {
+            location = await latLongFromLocation(cityState)
         }
+    }
 
-    } else {
-        // search by user's location
-        try {
-            const response = await instance.get(`&maxresults=10&latitude=${req.body.latitude}&longitude=${req.body.longitude}`)
-            res.json(response.data)
-        } catch (err) {
-            console.log(err)
-        }
+    try {
+        const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
+        // SAVE TO DB
+        saveStationsToDB(response.data)
+        res.json(response.data)
+    } catch (err) {
+        console.log(err)
     }
 })
 
