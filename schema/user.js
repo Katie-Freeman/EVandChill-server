@@ -13,7 +13,18 @@ const userSchema = new mongoose.Schema({
                 ref: 'User'
             }
         }
+    ],
+    reviews: [
+        {
+            stationId: Number,
+            review: String,
+            user: {
+                type: Schema.Types.ObjectId,
+                ref: 'User'
+            }
+        }
     ]
+
 })
 
 const User = mongoose.model('User', userSchema)

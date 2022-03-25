@@ -39,12 +39,20 @@ router.post('/stations', async (req, res) => {
         // search by user's location
         try {
             const response = await instance.get(`&maxresults=10&latitude=${req.body.latitude}&longitude=${req.body.longitude}`)
-            res.json(response)
+            res.json(response.data)
         } catch (err) {
             console.log(err)
         }
     }
+})
 
+router.get('/id/:stationId', async (req, res) => {
+    try {
+        const response = await instance.get(`&chargepointid=${req.params.stationId}`)
+        res.json(response.data)
+    } catch (err) {
+        console.log(err)
+    }
 })
 
 router.post('/add-favorite', async (req, res) => {
@@ -112,7 +120,7 @@ const checkDBForStations = (coords) => {
 }
 
 const saveStationsToDB = (stations) => {
-    console.log('saving...')
+    console.log('saving to DB...')
     //const options = { upsert: true, new: true, setDefaultsOnInsert: true }
     stations.forEach(async station => {
         const connections = station.Connections.map(connection =>
@@ -120,10 +128,10 @@ const saveStationsToDB = (stations) => {
             type: connection.ConnectionType.Title,
             speed: connection.ConnectionType.ID
         }))
-        console.log(connections)
+        //console.log(connections)
 
         await Station.create({
-            externalId: station.UUID,
+            externalId: station.ID,
             lastUpdated: station.DataProvider.DateLastImported,
             name: station.AddressInfo.Title,
             address: `${station.AddressInfo.AddressLine1} ${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`,
