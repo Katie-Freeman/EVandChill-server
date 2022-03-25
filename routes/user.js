@@ -1,63 +1,87 @@
-require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../schema/user");
 
-router.post("/login", async (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
+const parseSuccessObject = (user) => {
+    const token = jwt.sign({ username: user.username }, process.env.JWT);
+    const userResp = { ...user._doc };
+    delete userResp.password;
+    delete userResp.__v;
 
-  const user = await User.findOne({
-    username: username,
-  });
-  if (user) {
-    bcrypt.compare(password, user.password, (err, result) => {
-      if (result) {
-        const token = jwt.sign({ username: user.username }, process.env.JWT);
-        res.json({ success: true, user: user, token: token });
-      } else {
-        res.json({ success: false, message: "Not Authenticated" });
-      }
+    return {
+        success: true,
+        user: userResp,
+        token,
+    };
+};
+
+router.post("/login", async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    const user = await User.findOne({
+        username: username,
     });
-  } else {
-    res.json({ success: false, message: "Authenticaton failed" });
-  }
+    if (user) {
+        bcrypt.compare(password, user.password, (err, result) => {
+            if (result) {
+                const successObj = parseSuccessObject(user);
+                res.json(successObj);
+            } else {
+                res.status(400).json({
+                    success: false,
+                    message: "Not Authenticated",
+                });
+            }
+        });
+    } else {
+        res.status(400).json({
+            success: false,
+            message: "Authenticaton failed",
+        });
+    }
 });
 
 router.post("/register", async (req, res) => {
-  const username = req.body.username;
-  const email = req.body.email;
-  const password = req.body.password;
-  console.log("Registering");
-  const user = await User.findOne({
-    username: username,
-  });
-  if (user) {
-    res.json({ success: false, message: "Username already exisits!" });
-  } else {
-    bcrypt.genSalt(10, function (err, salt) {
-      bcrypt.hash(password, salt, function (err, hash) {
-        const user = new User({
-          username: username,
-          email: email,
-          password: hash,
-        });
-        user.save((error) => {
-          if (error) {
-            res.json({ success: false, message: error });
-          } else {
-            res.json({ success: true, message: "User has been saved!" });
-          }
-        });
-      });
+    const { username, email, password } = req.body;
+
+    const user = await User.findOne({
+        username: username,
     });
-  }
+
+    if (user) {
+        res.status(400).json({
+            success: false,
+            message: "Username already exisits!",
+        });
+    } else {
+        bcrypt.genSalt(10, function (err, salt) {
+            bcrypt.hash(password, salt, function (err, hash) {
+                const newUser = new User({
+                    username: username,
+                    email: email,
+                    password: hash,
+                });
+                newUser.save((error) => {
+                    console.log(newUser);
+                    console.log(newUser._id.toString());
+                    if (error) {
+                        res.status(500).json({
+                            success: false,
+                            message: error,
+                        });
+                    } else {
+                        const successObj = parseSuccessObject(newUser);
+                        res.json(successObj);
+                    }
+                });
+            });
+        });
+    }
 });
 
-router.delete('/favorites', (req, res) => {
-    
-})
+router.delete("/favorites", (req, res) => {});
 
 module.exports = router;
