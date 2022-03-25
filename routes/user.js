@@ -56,8 +56,8 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.delete('/favorites', (req, res) => {
+// router.delete('/favorites', (req, res) => {
     
-})
+// })
 
 module.exports = router;
