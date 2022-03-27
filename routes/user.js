@@ -17,6 +17,21 @@ const parseSuccessObject = (user) => {
     };
 };
 
+router.post("/guest-login", async (req, res) => {
+    const user = await User.findOne({
+        username: "GUEST",
+    });
+    if (user) {
+        const successObj = parseSuccessObject(user);
+        res.json(successObj);
+    } else {
+        res.status(500).json({
+            success: false,
+            message: "Not Authenticated",
+        });
+    }
+});
+
 router.post("/login", async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
