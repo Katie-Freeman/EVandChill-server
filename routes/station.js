@@ -28,7 +28,7 @@ router.post('/stations', async (req, res) => {
         const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
         // SAVE TO DB
         saveStationsToDB(response.data)
-        res.json(response.data)
+        res.json({ stations: response.data, location: location })
     } catch (err) {
         console.log(err)
     }
