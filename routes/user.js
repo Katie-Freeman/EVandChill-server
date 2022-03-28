@@ -6,9 +6,8 @@ const User = require("../schema/user");
 
 const parseSuccessObject = (user) => {
     const token = jwt.sign({ username: user.username }, process.env.JWT);
-    const userResp = { ...user._doc };
-    delete userResp.password;
-    delete userResp.__v;
+    const { email, _id: id, username } = user;
+    const userResp = { email, id, username };
 
     return {
         success: true,
@@ -97,7 +96,5 @@ router.post("/register", async (req, res) => {
         });
     }
 });
-
-
 
 module.exports = router;
