@@ -14,6 +14,7 @@ const instance = axios.create({
 // search by zip code, city/state or user's location
 router.post('/stations', async (req, res) => {
     const { zip, cityState, latitude, longitude } = req.body
+
     let location = { lat: latitude, lng: longitude }
 
     if (!location.lat || !location.lng) {
@@ -27,7 +28,7 @@ router.post('/stations', async (req, res) => {
     try {
         const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
         // SAVE TO DB
-        saveStationsToDB(response.data)
+        //saveStationsToDB(response.data)
         res.json({ stations: response.data, location: location })
     } catch (err) {
         console.log(err)
