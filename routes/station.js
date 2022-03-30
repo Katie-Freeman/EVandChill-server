@@ -10,6 +10,9 @@ const axios = require('axios');
 const instance = axios.create({
     baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`
 })
+const amenitiesAPI = axios.create({
+  baseURL: `https://maps.googleapis.com/maps/api/place/nearbysearch/json&?key=${process.env.GOOGLE_PLACES_API_KEY}`,
+});
 
 // search by zip code, city/state or user's location
 router.post('/stations', async (req, res) => {
@@ -38,11 +41,31 @@ router.post('/stations', async (req, res) => {
 router.get('/id/:stationId', async (req, res) => {
     try {
         const response = await instance.get(`&chargepointid=${req.params.stationId}`)
-        res.json(response.data)
+        const station = response.data
+        const location = encodeURIComponent(`${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`);
+        console.log(location)
+        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=AIzaSyADJNmt5A2kIQ_tm2A1YyjvHh8aNnb51cA`;
+        const amenitiesResponse = await axios.get(url);
+        station[0].nearby=amenitiesResponse.data.results
+        res.json(station)
     } catch (err) {
         console.log(err)
     }
 })
+
+// router.get('/:stationId/food', async (req, res) => {
+//     const stationResponse = await instance.get(`&chargepointid=${req.params.stationId}`)
+//     const station=stationResponse.data
+//     console.log(station)
+//     try {
+//     const response = await amenitiesAPI.get(`&location${location}&type=restaurant`);
+//     res.json(response.data);
+//     console.log(response.data);
+//   } catch (error) {
+//     console.log(error);
+//   }
+// });
+
 
 router.post('/add-favorite', async (req, res) => {
     const stationNumber = req.body.stationNumber
