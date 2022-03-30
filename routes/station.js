@@ -44,7 +44,7 @@ router.get('/id/:stationId', async (req, res) => {
         const station = response.data
         const location = encodeURIComponent(`${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`);
         console.log(location)
-        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=AIzaSyADJNmt5A2kIQ_tm2A1YyjvHh8aNnb51cA`;
+        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=${process.env.GOOGLE_PLACES_API_KEY}`;
         const amenitiesResponse = await axios.get(url);
         station[0].nearby=amenitiesResponse.data.results
         res.json(station)
