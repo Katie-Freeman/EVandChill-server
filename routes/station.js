@@ -31,16 +31,15 @@ router.post('/stations', async (req, res) => {
         //saveStationsToDB(response.data)
         res.json({ stations: response.data, location: location })
     } catch (err) {
-        console.log(err)
     }
 })
 
 router.get('/id/:stationId', async (req, res) => {
     try {
+        
         const response = await instance.get(`&chargepointid=${req.params.stationId}`)
         const station = response.data
         const location = encodeURIComponent(`${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`);
-        console.log(location)
 
         /* url setup*/
         const entertainmentURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=movie_theater&key=${process.env.GOOGLE_PLACES_API_KEY}`;
@@ -59,8 +58,7 @@ router.get('/id/:stationId', async (req, res) => {
             restaurants: restaurantsPromise.data.results,
             stores: storesPromise.data.results,
         }
-
-        //console.log('ALL NEARBY DATA:', nearbyData);
+        
         station[0].nearby = nearbyData
         res.json(station)
     } catch (err) {
