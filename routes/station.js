@@ -11,7 +11,7 @@ const instance = axios.create({
     baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`
 })
 const amenitiesAPI = axios.create({
-  baseURL: `https://maps.googleapis.com/maps/api/place/nearbysearch/json&?key=${process.env.GOOGLE_PLACES_API_KEY}`,
+    baseURL: `https://maps.googleapis.com/maps/api/place/nearbysearch/json&?key=${process.env.GOOGLE_PLACES_API_KEY}`,
 });
 
 // search by zip code, city/state or user's location
@@ -46,7 +46,7 @@ router.get('/id/:stationId', async (req, res) => {
         console.log(location)
         const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=${process.env.GOOGLE_PLACES_API_KEY}`;
         const amenitiesResponse = await axios.get(url);
-        station[0].nearby=amenitiesResponse.data.results
+        station[0].nearby = amenitiesResponse.data.results
         res.json(station)
     } catch (err) {
         console.log(err)
@@ -68,7 +68,7 @@ router.get('/id/:stationId', async (req, res) => {
 
 
 router.post('/add-favorite', async (req, res) => {
-    const stationNumber = req.body.stationNumber
+    const stationNumber = parseInt(req.body.stationNumber)
     const username = req.body.username
 
     const user = await User.findOne({ username: username }) // or however the JWT is set up
@@ -95,16 +95,16 @@ router.post('/add-favorite', async (req, res) => {
     }
 })
 
-router.delete('/remove-favorite', async (req, res) => {
-    const favoriteId = req.body.favoriteId
+router.post('/remove-favorite', async (req, res) => {
+    const stationNumber = parseInt(req.body.stationNumber)
     const username = req.body.username
-
+    console.log(username)
     const user = await User.findOne({ username: username }) // or however the JWT is set up
-
+    console.log(user)
     if (user) {
         try {
             // remove favorite with pull
-            user.favorites.pull(favoriteId)
+            user.favorites.pull(stationNumber)
             const saved = await user.save()
             if (saved) {
                 res.json({ success: true, message: 'Removed from favorites.' })
