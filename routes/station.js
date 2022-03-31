@@ -60,7 +60,7 @@ router.get('/id/:stationId', async (req, res) => {
             stores: storesPromise.data.results,
         }
 
-        console.log('ALL NEARBY DATA:', nearbyData);
+        //console.log('ALL NEARBY DATA:', nearbyData);
         station[0].nearby = nearbyData
         res.json(station)
     } catch (err) {
@@ -97,29 +97,20 @@ router.post('/add-favorite', async (req, res) => {
     }
 })
 
-router.post('/remove-favorite', async (req, res) => {
-    const stationNumber = parseInt(req.body.stationNumber)
+router.delete('/remove-favorite', async (req, res) => {
+    const stationNumber = req.body.stationNumber
     const username = req.body.username
-    console.log(username)
-    const user = await User.findOne({ username: username }) // or however the JWT is set up
-    console.log(user)
-    if (user) {
-        try {
-            // remove favorite with pull
-            user.favorites.pull(stationNumber)
-            const saved = await user.save()
-            if (saved) {
-                res.json({ success: true, message: 'Removed from favorites.' })
-            } else {
-                res.json({ success: false, message: 'Error!' })
-            }
 
-        } catch (err) {
-            console.log(err)
+    try {
+        const success = await User.updateOne({ username: username },
+            { $pull: { favorites: { stationId: stationNumber } } })
+        if (success) {
+            res.json({ success: true, message: 'Removed from favorites.' })
+        } else {
+            res.json({ success: false, message: 'Error!' })
         }
-    } else {
-        // user does not exist
-        res.json({ success: false, message: 'Invalid username.' })
+    } catch (err) {
+        console.log(err)
     }
 })
 
