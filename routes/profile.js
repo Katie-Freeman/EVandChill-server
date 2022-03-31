@@ -16,18 +16,18 @@ router.get('/:username/my-favorites', async (req, res) => {
 })
 
 router.delete("/favorites", async (req, res) => {
-   const favoriteId =req.body.favoriteId
-   const userId = req.body.userId
-   console.log("body", req.body)
+    const { favoriteId, userId } = req.body
+
     const success = await User.updateOne({
         _id: userId
     },
-        {$pull: {favorites: {_id: favoriteId}}}
+        { $pull: { favorites: { _id: favoriteId } } }
     )
-    if(success) {
-        res.json({success})
-    }else{
-        res.json({error: "Could not update"})
+
+    if (success) {
+        res.json({ success })
+    } else {
+        res.json({ error: "Could not update" })
     }
 });
 
