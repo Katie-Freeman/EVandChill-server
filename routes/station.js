@@ -36,7 +36,7 @@ router.post('/stations', async (req, res) => {
 
 router.get('/id/:stationId', async (req, res) => {
     try {
-        
+
         const response = await instance.get(`&chargepointid=${req.params.stationId}`)
         const station = response.data
         const location = encodeURIComponent(`${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`);
@@ -58,7 +58,7 @@ router.get('/id/:stationId', async (req, res) => {
             restaurants: restaurantsPromise.data.results,
             stores: storesPromise.data.results,
         }
-        
+
         station[0].nearby = nearbyData
         res.json(station)
     } catch (err) {
@@ -68,8 +68,7 @@ router.get('/id/:stationId', async (req, res) => {
 
 
 router.post('/add-favorite', async (req, res) => {
-    const stationNumber = parseInt(req.body.stationNumber)
-    const username = req.body.username
+    const { stationNumber, username, title, address } = req.body
 
     const user = await User.findOne({ username: username }) // or however the JWT is set up
 
@@ -78,6 +77,8 @@ router.post('/add-favorite', async (req, res) => {
             // add to favorites list of logged in user
             user.favorites.push({
                 stationId: stationNumber,
+                title: title,
+                address: address,
                 user: user._id
             })
             const saved = await user.save()
