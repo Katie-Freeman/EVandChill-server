@@ -10,9 +10,6 @@ const axios = require('axios');
 const instance = axios.create({
     baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`
 })
-const amenitiesAPI = axios.create({
-    baseURL: `https://maps.googleapis.com/maps/api/place/nearbysearch/json&?key=${process.env.GOOGLE_PLACES_API_KEY}`,
-});
 
 // search by zip code, city/state or user's location
 router.post('/stations', async (req, res) => {
@@ -44,27 +41,32 @@ router.get('/id/:stationId', async (req, res) => {
         const station = response.data
         const location = encodeURIComponent(`${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`);
         console.log(location)
-        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=${process.env.GOOGLE_PLACES_API_KEY}`;
-        const amenitiesResponse = await axios.get(url);
-        station[0].nearby = amenitiesResponse.data.results
+
+        /* url setup*/
+        const entertainmentURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=movie_theater&key=${process.env.GOOGLE_PLACES_API_KEY}`;
+        const restaurantsURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=${process.env.GOOGLE_PLACES_API_KEY}`;
+        const storesURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=store&key=${process.env.GOOGLE_PLACES_API_KEY}`;
+
+        /* create requests */
+        const entertainmentPromise = await axios.get(entertainmentURL);
+        const restaurantsPromise = await axios.get(restaurantsURL);
+        const storesPromise = await axios.get(storesURL);
+
+        /* build data object to return from responses */
+
+        const nearbyData = {
+            theaters: entertainmentPromise.data.results,
+            restaurants: restaurantsPromise.data.results,
+            stores: storesPromise.data.results,
+        }
+
+        console.log('ALL NEARBY DATA:', nearbyData);
+        station[0].nearby = nearbyData
         res.json(station)
     } catch (err) {
         console.log(err)
     }
 })
-
-// router.get('/:stationId/food', async (req, res) => {
-//     const stationResponse = await instance.get(`&chargepointid=${req.params.stationId}`)
-//     const station=stationResponse.data
-//     console.log(station)
-//     try {
-//     const response = await amenitiesAPI.get(`&location${location}&type=restaurant`);
-//     res.json(response.data);
-//     console.log(response.data);
-//   } catch (error) {
-//     console.log(error);
-//   }
-// });
 
 
 router.post('/add-favorite', async (req, res) => {
