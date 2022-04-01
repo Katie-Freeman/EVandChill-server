@@ -17,8 +17,11 @@ const sanitizeResponseData = (station) => {
         speed: connection.ConnectionType.ID,
     }));
     let supportNumber = null;
-    if (station.OperatorInfo && station.OperatorInfo.PhonePrimaryContact) {
-        supportNumber = station.OperatorInfo.PhonePrimaryContact;
+    let supportEmail = null;
+    if (station.OperatorInfo) {
+        const { PhonePrimaryContact, ContactEmail } = station.OperatorInfo;
+        if (PhonePrimaryContact) supportNumber = PhonePrimaryContact;
+        if (ContactEmail) supportEmail = ContactEmail;
     }
 
     return {
@@ -27,10 +30,11 @@ const sanitizeResponseData = (station) => {
         name: station.AddressInfo.Title,
         address: station.AddressInfo.AddressLine1,
         cityStateZip: `${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`,
-        latitude: station.AddressInfo.Latitude.toFixed(1),
-        longitude: station.AddressInfo.Longitude.toFixed(1),
+        latitude: station.AddressInfo.Latitude,
+        longitude: station.AddressInfo.Longitude,
         plugTypes: connections,
         supportNumber: supportNumber,
+        supportEmail: supportEmail,
         operatingHours: station.AddressInfo.AccessComments
             ? station.AddressInfo.AccessComments
             : null,
@@ -40,7 +44,6 @@ const sanitizeResponseData = (station) => {
 // search by zip code, city/state or user's location
 router.post("/stations", async (req, res) => {
     const { zip, cityState, latitude, longitude } = req.body;
-
     let location = { lat: latitude, lng: longitude };
 
     if (!location.lat || !location.lng) {
@@ -50,14 +53,15 @@ router.post("/stations", async (req, res) => {
             location = await latLongFromLocation(cityState);
         }
     }
-
+    location.lat = location.lat.toFixed(1);
+    location.lng = location.lng.toFixed(1);
+    console.log(location);
     try {
         StationResult.findOrCreate(
             {
                 location: `${location.lat},${location.lng}`,
             },
             async (err, stations) => {
-                console.log(stations);
                 let { dateUpdated, response } = stations;
                 // 2073600000 ms in a day
                 if (
@@ -181,6 +185,7 @@ const saveStationsToDB = (stations) => {
             dbStation.longitude = station.longitude;
             dbStation.plugTypes = station.plugTypes;
             dbStation.supportNumber = station.supportNumber;
+            dbStation.supportEmail = station.supportEmail;
             dbStation.operatingHours = station.operatingHours;
             dbStation.save();
         });
