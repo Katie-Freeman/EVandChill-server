@@ -18,6 +18,8 @@ const userSchema = new mongoose.Schema({
         {
             stationId: Number,
             review: String,
+            rating:Number,
+            isWorking:Boolean,
             user: {
                 type: Schema.Types.ObjectId,
                 ref: 'User'

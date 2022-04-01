@@ -148,6 +148,48 @@ const saveStationsToDB = (stations) => {
     })
 }
 
+router.post('/:stationId/add-review', async(req, res) => {
+    const stationNumber = parseInt(req.body.stationNumber)
+    const username = req.body.username
+    const review = req.body.review
+    const isWorking=req.body.isWorking
+    const rating= parseInt(req.body.rating)
+
+    const user = await User.findOne({ username: username }) 
+    const station = await Station.findOne({externalId: stationNumber});
+
+    if (user && station) {
+        console.log('STATION', station);
+        try{
+           const stationResponse = await station.reviews.push({
+            user: user,
+            review: review,
+            rating: rating,
+           });
+           station.save();
+
+           const userResponse = await user.reviews.push({
+                stationId: stationNumber,
+                user: username,
+                review: review,
+                isWorking: isWorking,
+                rating:rating,
+            })
+            user.save()
+
+            console.log('STATION RESPONSE', stationResponse);
+            if (stationResponse && userResponse) {
+                return res.json({ user: userResponse, station: stationResponse});
+            }
+
+        } catch(error) {
+           return res.json({ error })
+}
+    } else {
+        res.json({ success: false, message: "Invalid username." });
+    }
+})
+
 module.exports = router;
 
 
