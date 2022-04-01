@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 const findOrCreate = require("mongoose-find-or-create");
 
 const stationSchema = new mongoose.Schema({
+
     externalId: String, // id from OCM
     lastUpdated: String, // OCM DataProvider.DateLastImported
     name: String,
@@ -21,6 +22,8 @@ const stationSchema = new mongoose.Schema({
     reviews: [
         {
             review: String,
+            rating: Number,
+            isWorking: Boolean,
             user: {
                 type: Schema.Types.ObjectId,
                 ref: "User",
