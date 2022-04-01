@@ -10,13 +10,7 @@ const stationSchema = new mongoose.Schema({
     address: String,
     latitude: Number, // OCM lat/lng - rounded to nearest tenth
     longitude: Number,
-    plugTypes: [
-        // {
-        //     type: String,
-        //     speed: Number,
-        //     quantity: Number
-        // }
-    ],
+    plugTypes: [{}],
     supportNumber: String,
     supportEmail: String,
     reviews: [
@@ -33,27 +27,9 @@ const stationSchema = new mongoose.Schema({
     operatingHours: String,
     amenities: {
         lastUpdated: Number, //when search was last performed - Date.now() milliseconds
-        restaurants: [
-            {
-                name: String,
-                address: String,
-                location: String,
-            },
-        ],
-        entertainment: [
-            {
-                name: String,
-                address: String,
-                location: String,
-            },
-        ],
-        stores: [
-            {
-                name: String,
-                address: String,
-                location: String,
-            },
-        ],
+        restaurants: [],
+        entertainment: [],
+        stores: [],
     },
 });
 
