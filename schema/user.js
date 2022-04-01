@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
     favorites: [
         {
             stationId: Number,
+            title: String,
+            address: String,
             user: {
                 type: Schema.Types.ObjectId,
                 ref: 'User'
