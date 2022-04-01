@@ -14,7 +14,7 @@ const instance = axios.create({
 const sanitizeResponseData = (station) => {
     const connections = station.Connections.map((connection) => ({
         type: connection.ConnectionType.Title,
-        speed: connection.ConnectionType.ID,
+        speed: connection.ConnectionType.externalId,
     }));
     let supportNumber = null;
     let supportEmail = null;
@@ -178,7 +178,7 @@ router.delete("/remove-favorite", async (req, res) => {
 const saveStationsToDB = (stations) => {
     console.log("saving to DB...");
     stations.forEach((station) => {
-        Station.findOrCreate({ externalId: station.ID }, (err, dbStation) => {
+        Station.findOrCreate({ externalId: station.externalId }, (err, dbStation) => {
             dbStation.externalId = station.externalId;
             dbStation.lastUpdated = station.lastUpdated;
             dbStation.name = station.name;
