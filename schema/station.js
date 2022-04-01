@@ -1,6 +1,6 @@
-
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const findOrCreate = require("mongoose-find-or-create");
 
 const stationSchema = new mongoose.Schema({
     externalId: String, // id from OCM
@@ -9,16 +9,6 @@ const stationSchema = new mongoose.Schema({
     address: String,
     latitude: Number, // OCM lat/lng - rounded to nearest tenth
     longitude: Number,
-    images: [
-        {
-            imageUrl: String,
-            user: {
-                type: Schema.Types.ObjectId,
-                ref: 'User'
-            }
-
-        }
-    ],
     plugTypes: [
         // {
         //     type: String,
@@ -27,15 +17,15 @@ const stationSchema = new mongoose.Schema({
         // }
     ],
     supportNumber: String,
+    supportEmail: String,
     reviews: [
         {
             review: String,
             user: {
                 type: Schema.Types.ObjectId,
-                ref: 'User'
-            }
-
-        }
+                ref: "User",
+            },
+        },
     ],
     operatingHours: String,
     amenities: {
@@ -44,34 +34,28 @@ const stationSchema = new mongoose.Schema({
             {
                 name: String,
                 address: String,
-                location: String
-            }
+                location: String,
+            },
         ],
         entertainment: [
             {
                 name: String,
                 address: String,
-                location: String
-            }
+                location: String,
+            },
         ],
-        gasStations: [
+        stores: [
             {
                 name: String,
                 address: String,
-                location: String
-            }
+                location: String,
+            },
         ],
-        groceryStores: [
-            {
-                name: String,
-                address: String,
-                location: String
-            }
-        ]
-    }
-
+    },
 });
 
-const Station = mongoose.model('Station', stationSchema);
+stationSchema.plugin(findOrCreate);
+
+const Station = mongoose.model("Station", stationSchema);
 
 module.exports = Station;
