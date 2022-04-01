@@ -38,7 +38,46 @@ const sanitizeResponseData = (station) => {
         operatingHours: station.AddressInfo.AccessComments
             ? station.AddressInfo.AccessComments
             : null,
+        amenities: {
+            lastUpdated: null,
+            entertainment: [],
+            restaurants: [],
+            stores: [],
+        },
     };
+};
+
+const getGooglePlaceResult = async (location, type) => {
+    const placeResponse = await axios.get(
+        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=${type}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+    );
+    return placeResponse.data.results;
+};
+
+const buildNearbyResults = async (station) => {
+    const location = encodeURIComponent(
+        `${station.latitude},${station.longitude}`
+    );
+
+    const entertainmentResults = await getGooglePlaceResult(
+        location,
+        "movie_theater"
+    );
+    const restaurantResults = await getGooglePlaceResult(
+        location,
+        "restaurant"
+    );
+    const storesResults = await getGooglePlaceResult(location, "store");
+
+    /* build data object to return from responses */
+    const nearbyData = {
+        entertainment: entertainmentResults,
+        restaurants: restaurantResults,
+        stores: storesResults,
+        lastUpdated: Date.now(),
+    };
+
+    return nearbyData;
 };
 
 // search by zip code, city/state or user's location
@@ -92,38 +131,44 @@ router.get("/id/:stationId", async (req, res) => {
     try {
         Station.findOrCreate(
             { externalId: req.params.stationId },
-            (err, dbStation) => {}
+            async (err, dbStation) => {
+                if (dbStation.name) {
+                    const { amenities } = dbStation;
+                    // 2073600000 ms in a day
+                    if (
+                        !amenities.lastUpdated ||
+                        Date.now() - amenities.lastUpdated > 2073600000
+                    ) {
+                        const nearbyResults = await buildNearbyResults(
+                            dbStation
+                        );
+                        dbStation.amenities = nearbyResults;
+                        dbStation.save();
+                        res.json(dbStation);
+                    } else {
+                        res.json(dbStation);
+                    }
+                } else {
+                    const response = await instance.get(
+                        `&chargepointid=${req.params.stationId}`
+                    );
+                    const stationRaw = response.data[0];
+                    const sanitizedStation = sanitizeResponseData(stationRaw);
+                    const nearbyResults = await buildNearbyResults(
+                        sanitizedStation
+                    );
+                    sanitizedStation.amenities = nearbyResults;
+                    parseStationForDB(dbStation, sanitizedStation);
+                    dbStation.save();
+                    res.json(sanitizedStation);
+                }
+            }
         );
-        const response = await instance.get(
-            `&chargepointid=${req.params.stationId}`
-        );
-        const station = response.data;
-        const location = encodeURIComponent(
-            `${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`
-        );
-
-        /* url setup*/
-        const entertainmentURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=movie_theater&key=${process.env.GOOGLE_PLACES_API_KEY}`;
-        const restaurantsURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=restaurant&key=${process.env.GOOGLE_PLACES_API_KEY}`;
-        const storesURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=store&key=${process.env.GOOGLE_PLACES_API_KEY}`;
-
-        /* create requests */
-        const entertainmentPromise = await axios.get(entertainmentURL);
-        const restaurantsPromise = await axios.get(restaurantsURL);
-        const storesPromise = await axios.get(storesURL);
-
-        /* build data object to return from responses */
-
-        const nearbyData = {
-            theaters: entertainmentPromise.data.results,
-            restaurants: restaurantsPromise.data.results,
-            stores: storesPromise.data.results,
-        };
-
-        station[0].nearby = nearbyData;
-        res.json(station);
     } catch (err) {
-        console.log(err);
+        res.status(400).json({
+            success: false,
+            message: "Unable to get station details",
+        });
     }
 });
 
@@ -145,10 +190,16 @@ router.post("/add-favorite", async (req, res) => {
             if (saved) {
                 res.json({ success: true, message: "Added to favorites." });
             } else {
-                res.json({ success: false, message: "Error!" });
+                res.status(500).json({
+                    success: false,
+                    message: "Error adding favorite!",
+                });
             }
         } catch (err) {
-            console.log(err);
+            res.status(500).json({
+                success: false,
+                message: "Error adding favorite!",
+            });
         }
     } else {
         // user does not exist
@@ -168,27 +219,38 @@ router.delete("/remove-favorite", async (req, res) => {
         if (success) {
             res.json({ success: true, message: "Removed from favorites." });
         } else {
-            res.json({ success: false, message: "Error!" });
+            res.status(500).json({
+                success: false,
+                message: "Error removing favorite!",
+            });
         }
     } catch (err) {
-        console.log(err);
+        res.status(500).json({
+            success: false,
+            message: "Error removing favorite!",
+        });
     }
 });
+
+const parseStationForDB = (dbStation, station) => {
+    dbStation.externalId = station.externalId;
+    dbStation.lastUpdated = station.lastUpdated;
+    dbStation.name = station.name;
+    dbStation.address = station.address;
+    dbStation.latitude = station.latitude;
+    dbStation.longitude = station.longitude;
+    dbStation.plugTypes = station.plugTypes;
+    dbStation.supportNumber = station.supportNumber;
+    dbStation.supportEmail = station.supportEmail;
+    dbStation.operatingHours = station.operatingHours;
+    dbStation.amenities = station.amenities;
+};
 
 const saveStationsToDB = (stations) => {
     console.log("saving to DB...");
     stations.forEach((station) => {
         Station.findOrCreate({ externalId: station.ID }, (err, dbStation) => {
-            dbStation.externalId = station.externalId;
-            dbStation.lastUpdated = station.lastUpdated;
-            dbStation.name = station.name;
-            dbStation.address = station.address;
-            dbStation.latitude = station.latitude;
-            dbStation.longitude = station.longitude;
-            dbStation.plugTypes = station.plugTypes;
-            dbStation.supportNumber = station.supportNumber;
-            dbStation.supportEmail = station.supportEmail;
-            dbStation.operatingHours = station.operatingHours;
+            parseStationForDB(dbStation, station);
             dbStation.save();
         });
     });
