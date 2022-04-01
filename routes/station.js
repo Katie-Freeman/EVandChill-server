@@ -11,6 +11,31 @@ const instance = axios.create({
     baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`,
 });
 
+const sanitizeResponseData = (station) => {
+    const connections = station.Connections.map((connection) => ({
+        type: connection.ConnectionType.Title,
+        speed: connection.ConnectionType.ID,
+    }));
+    let supportNumber = null;
+    if (station.OperatorInfo && station.OperatorInfo.PhonePrimaryContact) {
+        supportNumber = station.OperatorInfo.PhonePrimaryContact;
+    }
+
+    return {
+        externalId: station.ID,
+        lastUpdated: station.DataProvider.DateLastImported,
+        name: station.AddressInfo.Title,
+        address: `${station.AddressInfo.AddressLine1} ${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`,
+        latitude: station.AddressInfo.Latitude.toFixed(1),
+        longitude: station.AddressInfo.Longitude.toFixed(1),
+        plugTypes: connections,
+        supportNumber: supportNumber,
+        operatingHours: station.AddressInfo.AccessComments
+            ? station.AddressInfo.AccessComments
+            : null,
+    };
+};
+
 // search by zip code, city/state or user's location
 router.post("/stations", async (req, res) => {
     const { zip, cityState, latitude, longitude } = req.body;
@@ -43,9 +68,11 @@ router.post("/stations", async (req, res) => {
                         `&latitude=${location.lat}&longitude=${location.lng}`
                     );
                     stations.dateUpdated = Date.now();
-                    stations.response = stationsResponse.data;
+                    stations.response = stationsResponse.data.map((station) =>
+                        sanitizeResponseData(station)
+                    );
                     stations.save();
-                    saveStationsToDB(stationsResponse.data);
+                    saveStationsToDB(stations.response);
                 }
 
                 res.json({ stations: response, location: location });
@@ -56,6 +83,10 @@ router.post("/stations", async (req, res) => {
 
 router.get("/id/:stationId", async (req, res) => {
     try {
+        Station.findOrCreate(
+            { externalId: req.params.stationId },
+            (err, dbStation) => {}
+        );
         const response = await instance.get(
             `&chargepointid=${req.params.stationId}`
         );
@@ -140,32 +171,16 @@ router.delete("/remove-favorite", async (req, res) => {
 const saveStationsToDB = (stations) => {
     console.log("saving to DB...");
     stations.forEach((station) => {
-        const connections = station.Connections.map((connection) => ({
-            type: connection.ConnectionType.Title,
-            speed: connection.ConnectionType.ID,
-        }));
         Station.findOrCreate({ externalId: station.ID }, (err, dbStation) => {
-            let supportNumber = null;
-            if (
-                station.OperatorInfo &&
-                station.OperatorInfo.PhonePrimaryContact
-            ) {
-                supportNumber = station.OperatorInfo.PhonePrimaryContact;
-            }
-
-            (dbStation.externalId = station.ID),
-                (dbStation.lastUpdated = station.DataProvider.DateLastImported),
-                (dbStation.name = station.AddressInfo.Title),
-                (dbStation.address = `${station.AddressInfo.AddressLine1} ${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`),
-                (dbStation.latitude = station.AddressInfo.Latitude.toFixed(1)),
-                (dbStation.longitude =
-                    station.AddressInfo.Longitude.toFixed(1)),
-                (dbStation.plugTypes = connections),
-                (dbStation.supportNumber = supportNumber);
-            dbStation.operatingHours = station.AddressInfo.AccessComments
-                ? station.AddressInfo.AccessComments
-                : null;
-
+            dbStation.externalId = station.externalId;
+            dbStation.lastUpdated = station.lastUpdated;
+            dbStation.name = station.name;
+            dbStation.address = station.address;
+            dbStation.latitude = station.latitude;
+            dbStation.longitude = station.longitude;
+            dbStation.plugTypes = station.plugTypes;
+            dbStation.supportNumber = station.supportNumber;
+            dbStation.operatingHours = station.operatingHours;
             dbStation.save();
         });
     });

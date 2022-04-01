@@ -9,15 +9,6 @@ const stationSchema = new mongoose.Schema({
     address: String,
     latitude: Number, // OCM lat/lng - rounded to nearest tenth
     longitude: Number,
-    images: [
-        {
-            imageUrl: String,
-            user: {
-                type: Schema.Types.ObjectId,
-                ref: "User",
-            },
-        },
-    ],
     plugTypes: [
         // {
         //     type: String,
@@ -52,14 +43,7 @@ const stationSchema = new mongoose.Schema({
                 location: String,
             },
         ],
-        gasStations: [
-            {
-                name: String,
-                address: String,
-                location: String,
-            },
-        ],
-        groceryStores: [
+        stores: [
             {
                 name: String,
                 address: String,
