@@ -1,6 +1,6 @@
-
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const findOrCreate = require("mongoose-find-or-create");
 
 const stationSchema = new mongoose.Schema({
     externalId: String, // id from OCM
@@ -14,10 +14,9 @@ const stationSchema = new mongoose.Schema({
             imageUrl: String,
             user: {
                 type: Schema.Types.ObjectId,
-                ref: 'User'
-            }
-
-        }
+                ref: "User",
+            },
+        },
     ],
     plugTypes: [
         // {
@@ -32,10 +31,9 @@ const stationSchema = new mongoose.Schema({
             review: String,
             user: {
                 type: Schema.Types.ObjectId,
-                ref: 'User'
-            }
-
-        }
+                ref: "User",
+            },
+        },
     ],
     operatingHours: String,
     amenities: {
@@ -44,34 +42,35 @@ const stationSchema = new mongoose.Schema({
             {
                 name: String,
                 address: String,
-                location: String
-            }
+                location: String,
+            },
         ],
         entertainment: [
             {
                 name: String,
                 address: String,
-                location: String
-            }
+                location: String,
+            },
         ],
         gasStations: [
             {
                 name: String,
                 address: String,
-                location: String
-            }
+                location: String,
+            },
         ],
         groceryStores: [
             {
                 name: String,
                 address: String,
-                location: String
-            }
-        ]
-    }
-
+                location: String,
+            },
+        ],
+    },
 });
 
-const Station = mongoose.model('Station', stationSchema);
+stationSchema.plugin(findOrCreate);
+
+const Station = mongoose.model("Station", stationSchema);
 
 module.exports = Station;

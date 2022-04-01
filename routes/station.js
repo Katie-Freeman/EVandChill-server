@@ -1,45 +1,68 @@
 require("dotenv").config();
-const express = require("express")
-const router = express.Router()
-const Station = require('../schema/station')
-const StationResult = require('../schema/stationResult')
-const User = require('../schema/user')
-const latLongFromLocation = require('../util/locationToCoords')
-const axios = require('axios');
+const express = require("express");
+const router = express.Router();
+const Station = require("../schema/station");
+const StationResult = require("../schema/stationResult");
+const User = require("../schema/user");
+const latLongFromLocation = require("../util/locationToCoords");
+const axios = require("axios");
 
 const instance = axios.create({
-    baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`
-})
+    baseURL: `https://api.openchargemap.io/v3/poi/?key=${process.env.OCM_API_KEY}&countrycode=US`,
+});
 
 // search by zip code, city/state or user's location
-router.post('/stations', async (req, res) => {
-    const { zip, cityState, latitude, longitude } = req.body
+router.post("/stations", async (req, res) => {
+    const { zip, cityState, latitude, longitude } = req.body;
 
-    let location = { lat: latitude, lng: longitude }
+    let location = { lat: latitude, lng: longitude };
 
     if (!location.lat || !location.lng) {
         if (zip) {
-            location = await latLongFromLocation(zip)
+            location = await latLongFromLocation(zip);
         } else if (cityState) {
-            location = await latLongFromLocation(cityState)
+            location = await latLongFromLocation(cityState);
         }
     }
 
     try {
-        const response = await instance.get(`&latitude=${location.lat}&longitude=${location.lng}`)
-        // SAVE TO DB
-        //saveStationsToDB(response.data)
-        res.json({ stations: response.data, location: location })
-    } catch (err) {
-    }
-})
+        StationResult.findOrCreate(
+            {
+                location: `${location.lat},${location.lng}`,
+            },
+            async (err, stations) => {
+                console.log(stations);
+                let { dateUpdated, response } = stations;
+                // 2073600000 ms in a day
+                if (
+                    !dateUpdated ||
+                    Date.now() - dateUpdated > 2073600000 ||
+                    response.length === 0
+                ) {
+                    stationsResponse = await instance.get(
+                        `&latitude=${location.lat}&longitude=${location.lng}`
+                    );
+                    stations.dateUpdated = Date.now();
+                    stations.response = stationsResponse.data;
+                    stations.save();
+                    saveStationsToDB(stationsResponse.data);
+                }
 
-router.get('/id/:stationId', async (req, res) => {
+                res.json({ stations: response, location: location });
+            }
+        );
+    } catch (err) {}
+});
+
+router.get("/id/:stationId", async (req, res) => {
     try {
-
-        const response = await instance.get(`&chargepointid=${req.params.stationId}`)
-        const station = response.data
-        const location = encodeURIComponent(`${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`);
+        const response = await instance.get(
+            `&chargepointid=${req.params.stationId}`
+        );
+        const station = response.data;
+        const location = encodeURIComponent(
+            `${station[0].AddressInfo.Latitude},${station[0].AddressInfo.Longitude}`
+        );
 
         /* url setup*/
         const entertainmentURL = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=movie_theater&key=${process.env.GOOGLE_PLACES_API_KEY}`;
@@ -57,20 +80,19 @@ router.get('/id/:stationId', async (req, res) => {
             theaters: entertainmentPromise.data.results,
             restaurants: restaurantsPromise.data.results,
             stores: storesPromise.data.results,
-        }
+        };
 
-        station[0].nearby = nearbyData
-        res.json(station)
+        station[0].nearby = nearbyData;
+        res.json(station);
     } catch (err) {
-        console.log(err)
+        console.log(err);
     }
-})
+});
 
+router.post("/add-favorite", async (req, res) => {
+    const { stationNumber, username, title, address } = req.body;
 
-router.post('/add-favorite', async (req, res) => {
-    const { stationNumber, username, title, address } = req.body
-
-    const user = await User.findOne({ username: username }) // or however the JWT is set up
+    const user = await User.findOne({ username: username }); // or however the JWT is set up
 
     if (user) {
         try {
@@ -79,78 +101,74 @@ router.post('/add-favorite', async (req, res) => {
                 stationId: stationNumber,
                 title: title,
                 address: address,
-                user: user._id
-            })
-            const saved = await user.save()
+                user: user._id,
+            });
+            const saved = await user.save();
             if (saved) {
-                res.json({ success: true, message: 'Added to favorites.' })
+                res.json({ success: true, message: "Added to favorites." });
             } else {
-                res.json({ success: false, message: 'Error!' })
+                res.json({ success: false, message: "Error!" });
             }
         } catch (err) {
-            console.log(err)
+            console.log(err);
         }
     } else {
         // user does not exist
-        res.json({ success: false, message: 'Invalid username.' })
+        res.json({ success: false, message: "Invalid username." });
     }
-})
+});
 
-router.delete('/remove-favorite', async (req, res) => {
-    const stationNumber = req.body.stationNumber
-    const username = req.body.username
+router.delete("/remove-favorite", async (req, res) => {
+    const stationNumber = req.body.stationNumber;
+    const username = req.body.username;
 
     try {
-        const success = await User.updateOne({ username: username },
-            { $pull: { favorites: { stationId: stationNumber } } })
+        const success = await User.updateOne(
+            { username: username },
+            { $pull: { favorites: { stationId: stationNumber } } }
+        );
         if (success) {
-            res.json({ success: true, message: 'Removed from favorites.' })
+            res.json({ success: true, message: "Removed from favorites." });
         } else {
-            res.json({ success: false, message: 'Error!' })
+            res.json({ success: false, message: "Error!" });
         }
     } catch (err) {
-        console.log(err)
+        console.log(err);
     }
-})
-
-router.post('/add-photo', async (req, res) => {
-
-})
-
-// FUNCTIONS
-
-const checkDBForStations = (coords) => {
-
-}
+});
 
 const saveStationsToDB = (stations) => {
-    console.log('saving to DB...')
-    //const options = { upsert: true, new: true, setDefaultsOnInsert: true }
-    stations.forEach(async station => {
-        const connections = station.Connections.map(connection =>
-        ({
+    console.log("saving to DB...");
+    stations.forEach((station) => {
+        const connections = station.Connections.map((connection) => ({
             type: connection.ConnectionType.Title,
-            speed: connection.ConnectionType.ID
-        }))
-        //console.log(connections)
+            speed: connection.ConnectionType.ID,
+        }));
+        Station.findOrCreate({ externalId: station.ID }, (err, dbStation) => {
+            let supportNumber = null;
+            if (
+                station.OperatorInfo &&
+                station.OperatorInfo.PhonePrimaryContact
+            ) {
+                supportNumber = station.OperatorInfo.PhonePrimaryContact;
+            }
 
-        await Station.create({
-            externalId: station.ID,
-            lastUpdated: station.DataProvider.DateLastImported,
-            name: station.AddressInfo.Title,
-            address: `${station.AddressInfo.AddressLine1} ${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`,
-            latitude: station.AddressInfo.Latitude.toFixed(1),
-            longitude: station.AddressInfo.Longitude.toFixed(1),
-            plugTypes: connections,
-            supportNumber: station.OperatorInfo ? station.OperatorInfo.PhonePrimaryContact ? station.OperatorInfo.PhonePrimaryContact : null : null,
-            operatingHours: station.AddressInfo.AccessComments ? station.AddressInfo.AccessComments : null
-        })
-        // await Station.deleteMany({})
-    })
-}
+            (dbStation.externalId = station.ID),
+                (dbStation.lastUpdated = station.DataProvider.DateLastImported),
+                (dbStation.name = station.AddressInfo.Title),
+                (dbStation.address = `${station.AddressInfo.AddressLine1} ${station.AddressInfo.Town}, ${station.AddressInfo.StateOrProvince} ${station.AddressInfo.Postcode}`),
+                (dbStation.latitude = station.AddressInfo.Latitude.toFixed(1)),
+                (dbStation.longitude =
+                    station.AddressInfo.Longitude.toFixed(1)),
+                (dbStation.plugTypes = connections),
+                (dbStation.supportNumber = supportNumber);
+            dbStation.operatingHours = station.AddressInfo.AccessComments
+                ? station.AddressInfo.AccessComments
+                : null;
+
+            dbStation.save();
+        });
+    });
+};
 
 module.exports = router;
-
-
-
-
