@@ -53,8 +53,8 @@ router.post("/stations", async (req, res) => {
             location = await latLongFromLocation(cityState);
         }
     }
-    location.lat = location.lat.toFixed(1);
-    location.lng = location.lng.toFixed(1);
+    location.lat = parseFloat(location.lat.toFixed(1));
+    location.lng = parseFloat(location.lng.toFixed(1));
     console.log(location);
     try {
         StationResult.findOrCreate(
@@ -72,15 +72,17 @@ router.post("/stations", async (req, res) => {
                     stationsResponse = await instance.get(
                         `&latitude=${location.lat}&longitude=${location.lng}`
                     );
-                    stations.dateUpdated = Date.now();
-                    stations.response = stationsResponse.data.map((station) =>
-                        sanitizeResponseData(station)
+                    const sanitizedStations = stationsResponse.data.map(
+                        (station) => sanitizeResponseData(station)
                     );
+                    stations.dateUpdated = Date.now();
+                    stations.response = sanitizedStations;
                     stations.save();
-                    saveStationsToDB(stations.response);
+                    saveStationsToDB(sanitizedStations);
+                    res.json({ stations: sanitizedStations, location });
+                } else {
+                    res.json({ stations: response, location });
                 }
-
-                res.json({ stations: response, location: location });
             }
         );
     } catch (err) {}

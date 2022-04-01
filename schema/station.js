@@ -17,6 +17,7 @@ const stationSchema = new mongoose.Schema({
         // }
     ],
     supportNumber: String,
+    supportEmail: String,
     reviews: [
         {
             review: String,
