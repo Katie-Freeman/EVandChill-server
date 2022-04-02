@@ -97,16 +97,16 @@ router.post("/stations", async (req, res) => {
     const { zip, cityState, latitude, longitude } = req.body;
     let location = { lat: latitude, lng: longitude };
 
-    if (!location.lat || !location.lng) {
-        if (zip) {
-            location = await latLongFromLocation(zip, true);
-        } else if (cityState) {
-            location = await latLongFromLocation(cityState);
-        }
-    }
-    location.lat = parseFloat(location.lat.toFixed(1));
-    location.lng = parseFloat(location.lng.toFixed(1));
     try {
+        if (!location.lat || !location.lng) {
+            if (zip) {
+                location = await latLongFromLocation(zip, true);
+            } else if (cityState) {
+                location = await latLongFromLocation(cityState);
+            }
+        }
+        location.lat = parseFloat(location.lat.toFixed(1));
+        location.lng = parseFloat(location.lng.toFixed(1));
         StationResult.findOne(
             {
                 location: `${location.lat},${location.lng}`,
@@ -143,7 +143,19 @@ router.post("/stations", async (req, res) => {
                 }
             }
         );
-    } catch (err) {}
+    } catch (err) {
+        if (err.message === "LocationParseFailure") {
+            res.status(400).json({
+                success: false,
+                message: "Unable to resolve location",
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: "Unable to location stations",
+            });
+        }
+    }
 });
 
 router.get("/id/:stationId", async (req, res) => {
