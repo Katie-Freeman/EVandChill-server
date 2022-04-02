@@ -48,6 +48,17 @@ const sanitizeResponseData = (station) => {
     };
 };
 
+const getAndSanitizeStationsResponse = async (location) => {
+    const stationsResponse = await instance.get(
+        `&latitude=${location.lat}&longitude=${location.lng}`
+    );
+    const sanitizedStations = stationsResponse.data.map((station) =>
+        sanitizeResponseData(station)
+    );
+
+    return sanitizedStations;
+};
+
 const getGooglePlaceResult = async (location, type) => {
     const placeResponse = await axios.get(
         `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location}&radius=1500&type=${type}&key=${process.env.GOOGLE_PLACES_API_KEY}`
@@ -88,40 +99,47 @@ router.post("/stations", async (req, res) => {
 
     if (!location.lat || !location.lng) {
         if (zip) {
-            location = await latLongFromLocation(zip);
+            location = await latLongFromLocation(zip, true);
         } else if (cityState) {
             location = await latLongFromLocation(cityState);
         }
     }
     location.lat = parseFloat(location.lat.toFixed(1));
     location.lng = parseFloat(location.lng.toFixed(1));
-    console.log(location);
     try {
-        StationResult.findOrCreate(
+        StationResult.findOne(
             {
                 location: `${location.lat},${location.lng}`,
             },
             async (err, stations) => {
-                let { dateUpdated, response } = stations;
-                // 2073600000 ms in a day
-                if (
-                    !dateUpdated ||
-                    Date.now() - dateUpdated > 2073600000 ||
-                    response.length === 0
-                ) {
-                    stationsResponse = await instance.get(
-                        `&latitude=${location.lat}&longitude=${location.lng}`
-                    );
-                    const sanitizedStations = stationsResponse.data.map(
-                        (station) => sanitizeResponseData(station)
-                    );
-                    stations.dateUpdated = Date.now();
-                    stations.response = sanitizedStations;
-                    stations.save();
+                if (stations) {
+                    let { dateUpdated, response } = stations;
+                    // 2073600000 ms in a day
+                    if (
+                        !dateUpdated ||
+                        Date.now() - dateUpdated > 2073600000 ||
+                        response.length === 0
+                    ) {
+                        const sanitizedStations =
+                            await getAndSanitizeStationsResponse(location);
+                        stations.dateUpdated = Date.now();
+                        stations.response = sanitizedStations;
+                        stations.save();
+                        saveStationsToDB(sanitizedStations);
+                        res.json({ stations: sanitizedStations, location });
+                    } else {
+                        res.json({ stations: response, location });
+                    }
+                } else {
+                    const sanitizedStations =
+                        await getAndSanitizeStationsResponse(location);
+                    StationResult.create({
+                        response: sanitizedStations,
+                        dateUpdated: Date.now(),
+                        location: `${location.lat},${location.lng}`,
+                    });
                     saveStationsToDB(sanitizedStations);
                     res.json({ stations: sanitizedStations, location });
-                } else {
-                    res.json({ stations: response, location });
                 }
             }
         );
@@ -130,11 +148,11 @@ router.post("/stations", async (req, res) => {
 
 router.get("/id/:stationId", async (req, res) => {
     try {
-        Station.findOrCreate(
+        Station.findOne(
             { externalId: req.params.stationId },
             async (err, dbStation) => {
                 if (err) throw new Error("Unable to retrieve station details");
-                if (dbStation.name) {
+                if (dbStation) {
                     const { amenities } = dbStation;
                     // 2073600000 ms in a day
                     if (
@@ -160,8 +178,7 @@ router.get("/id/:stationId", async (req, res) => {
                         sanitizedStation
                     );
                     sanitizedStation.amenities = nearbyResults;
-                    parseStationForDB(dbStation, sanitizedStation);
-                    dbStation.save();
+                    Station.create({ sanitizedStation });
                     res.json(sanitizedStation);
                 }
             }
@@ -253,7 +270,6 @@ router.delete("/remove-favorite", async (req, res) => {
 });
 
 const parseStationForDB = (dbStation, station) => {
-    dbStation.externalId = station.externalId;
     dbStation.lastUpdated = station.lastUpdated;
     dbStation.name = station.name;
     dbStation.address = station.address;
@@ -271,10 +287,17 @@ const parseStationForDB = (dbStation, station) => {
 const saveStationsToDB = (stations) => {
     console.log("saving to DB...");
     stations.forEach((station) => {
-        Station.findOrCreate({ externalId: station.ID }, (err, dbStation) => {
-            parseStationForDB(dbStation, station);
-            dbStation.save();
-        });
+        Station.findOne(
+            { externalId: station.externalId },
+            (err, dbStation) => {
+                if (dbStation) {
+                    parseStationForDB(dbStation, station);
+                    dbStation.save();
+                } else {
+                    Station.create(station);
+                }
+            }
+        );
     });
 };
 
