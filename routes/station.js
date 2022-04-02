@@ -148,11 +148,11 @@ router.post("/stations", async (req, res) => {
 
 router.get("/id/:stationId", async (req, res) => {
     try {
-        Station.findOrCreate(
+        Station.findOne(
             { externalId: req.params.stationId },
             async (err, dbStation) => {
                 if (err) throw new Error("Unable to retrieve station details");
-                if (dbStation.name) {
+                if (dbStation) {
                     const { amenities } = dbStation;
                     // 2073600000 ms in a day
                     if (
@@ -178,8 +178,7 @@ router.get("/id/:stationId", async (req, res) => {
                         sanitizedStation
                     );
                     sanitizedStation.amenities = nearbyResults;
-                    parseStationForDB(dbStation, sanitizedStation);
-                    dbStation.save();
+                    Station.create({ sanitizedStation });
                     res.json(sanitizedStation);
                 }
             }
@@ -202,7 +201,6 @@ router.get("/id/:stationId/amenities", async (req, res) => {
                     message: "Error retrieving nearby places",
                 });
             }
-            console.log(dbStation);
             const nearbyResults = await buildNearbyResults(dbStation);
             dbStation.amenities = nearbyResults;
             dbStation.save();
@@ -272,7 +270,6 @@ router.delete("/remove-favorite", async (req, res) => {
 });
 
 const parseStationForDB = (dbStation, station) => {
-    // dbStation.externalId = station.externalId;
     dbStation.lastUpdated = station.lastUpdated;
     dbStation.name = station.name;
     dbStation.address = station.address;
@@ -290,14 +287,17 @@ const parseStationForDB = (dbStation, station) => {
 const saveStationsToDB = (stations) => {
     console.log("saving to DB...");
     stations.forEach((station) => {
-        Station.findOne({ externalId: station.ID }, (err, dbStation) => {
-            if (dbStation) {
-                parseStationForDB(dbStation, station);
-                dbStation.save();
-            } else {
-                Station.create(station);
+        Station.findOne(
+            { externalId: station.externalId },
+            (err, dbStation) => {
+                if (dbStation) {
+                    parseStationForDB(dbStation, station);
+                    dbStation.save();
+                } else {
+                    Station.create(station);
+                }
             }
-        });
+        );
     });
 };
 
