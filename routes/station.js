@@ -14,7 +14,8 @@ const instance = axios.create({
 const sanitizeResponseData = (station) => {
     const connections = station.Connections.map((connection) => ({
         type: connection.ConnectionType.Title,
-        speed: connection.ConnectionType.externalId,
+        quantity: connection.Quantity ? connection.Quantity : "Unknown",
+        speed: connection.Level ? connection.Level.Title : "No data available",
     }));
     let supportNumber = null;
     let supportEmail = null;
@@ -237,6 +238,7 @@ const parseStationForDB = (dbStation, station) => {
     dbStation.lastUpdated = station.lastUpdated;
     dbStation.name = station.name;
     dbStation.address = station.address;
+    dbStation.cityStateZip = station.cityStateZip;
     dbStation.latitude = station.latitude;
     dbStation.longitude = station.longitude;
     dbStation.plugTypes = station.plugTypes;
@@ -256,46 +258,48 @@ const saveStationsToDB = (stations) => {
     });
 };
 
-router.post('/:stationId/add-review', async(req, res) => {
-    const stationNumber = parseInt(req.body.stationNumber)
-    const username = req.body.username
-    const review = req.body.review
-    const isWorking=req.body.isWorking
-    const rating= parseInt(req.body.rating)
+router.post("/:stationId/add-review", async (req, res) => {
+    const stationNumber = parseInt(req.body.stationNumber);
+    const username = req.body.username;
+    const review = req.body.review;
+    const isWorking = req.body.isWorking;
+    const rating = parseInt(req.body.rating);
 
-    const user = await User.findOne({ username: username }) 
-    const station = await Station.findOne({externalId: stationNumber});
+    const user = await User.findOne({ username: username });
+    const station = await Station.findOne({ externalId: stationNumber });
 
     if (user && station) {
-        console.log('STATION', station);
-        try{
-           const stationResponse = await station.reviews.push({
-            user: user,
-            review: review,
-            rating: rating,
-           });
-           station.save();
+        console.log("STATION", station);
+        try {
+            const stationResponse = await station.reviews.push({
+                user: user,
+                review: review,
+                rating: rating,
+            });
+            station.save();
 
-           const userResponse = await user.reviews.push({
+            const userResponse = await user.reviews.push({
                 stationId: stationNumber,
                 user: username,
                 review: review,
                 isWorking: isWorking,
-                rating:rating,
-            })
-            user.save()
+                rating: rating,
+            });
+            user.save();
 
-            console.log('STATION RESPONSE', stationResponse);
+            console.log("STATION RESPONSE", stationResponse);
             if (stationResponse && userResponse) {
-                return res.json({ user: userResponse, station: stationResponse});
+                return res.json({
+                    user: userResponse,
+                    station: stationResponse,
+                });
             }
-
-        } catch(error) {
-           return res.json({ error })
-}
+        } catch (error) {
+            return res.json({ error });
+        }
     } else {
         res.json({ success: false, message: "Invalid username." });
     }
-})
+});
 
 module.exports = router;
