@@ -133,6 +133,7 @@ router.get("/id/:stationId", async (req, res) => {
         Station.findOrCreate(
             { externalId: req.params.stationId },
             async (err, dbStation) => {
+                if (err) throw new Error("Unable to retrieve station details");
                 if (dbStation.name) {
                     const { amenities } = dbStation;
                     // 2073600000 ms in a day
@@ -171,6 +172,24 @@ router.get("/id/:stationId", async (req, res) => {
             message: "Unable to get station details",
         });
     }
+});
+
+router.get("/id/:stationId/amenities", async (req, res) => {
+    Station.findOne(
+        { externalId: req.params.stationId },
+        async (err, dbStation) => {
+            if (err) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Error retrieving nearby places",
+                });
+            }
+            const nearbyResults = await buildNearbyResults(dbStation);
+            dbStation.amenities = nearbyResults;
+            dbStation.save();
+            res.json(nearbyResults);
+        }
+    );
 });
 
 router.post("/add-favorite", async (req, res) => {
@@ -245,7 +264,8 @@ const parseStationForDB = (dbStation, station) => {
     dbStation.supportNumber = station.supportNumber;
     dbStation.supportEmail = station.supportEmail;
     dbStation.operatingHours = station.operatingHours;
-    dbStation.amenities = station.amenities;
+    if (!dbStation.amenities.lastUpdated)
+        dbStation.amenities = station.amenities;
 };
 
 const saveStationsToDB = (stations) => {
