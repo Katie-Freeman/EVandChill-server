@@ -41,7 +41,7 @@ router.get('/:username/my-reviews', async (req, res) => {
     }
 })
 
-router.delete("/reviews", async (req, res) => {
+router.delete("/:username/reviews", async (req, res) => {
   const { reviewId, userId, stationId} = req.body;
   console.log("review", reviewId)
 //   const user = await user.findOne({ _id: userId});
