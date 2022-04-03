@@ -67,6 +67,6 @@ const task = new Task(
     (err) => console.log(err)
 );
 
-const guestJob = new SimpleIntervalJob({ minutes: 30 }, task);
+const guestJob = new SimpleIntervalJob({ minutes: 5 }, task);
 
 module.exports = { scheduler, guestJob };

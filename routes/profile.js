@@ -58,28 +58,19 @@ router.get("/:username/my-reviews", validateJwt, async (req, res) => {
 
 router.delete("/reviews", async (req, res) => {
     const { reviewId, userId, stationId } = req.body;
-    console.log("review", reviewId);
-    //   const user = await user.findOne({ _id: userId});
-    //   user.reviews.pull(reviewId);
-    //   user.save();
-
-    //   const station = await station.findOne({ externalId: stationId});
-    //   station.reviews.pull(reviewId);
-    //   station.save();
     const userSuccess = await User.updateOne(
         {
             _id: userId,
         },
         { $pullAll: { reviews: [{ " _id": reviewId }] } }
     );
-    console.log("USER", userSuccess);
     const stationSuccess = await Station.updateOne(
         {
             externalId: String(stationId),
         },
         { $pullAll: { reviews: [{ _id: reviewId }] } }
     );
-    // console.log("STATION", stationSuccess)
+
     if (userSuccess && stationSuccess) {
         res.json({ userSuccess, stationSuccess });
     } else {

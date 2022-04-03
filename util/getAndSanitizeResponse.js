@@ -1,3 +1,5 @@
+const sanitizeReponseData = require("./sanitizeReponseData");
+
 const getAndSanitizeStationsResponse = async (location, instance) => {
     const stationsResponse = await instance.get(
         `&latitude=${location.lat}&longitude=${location.lng}`
