@@ -1,4 +1,4 @@
-const sanitizeReponseData = require("./sanitizeReponseData");
+const sanitizeResponseData = require("./sanitizeReponseData");
 
 const getAndSanitizeStationsResponse = async (location, instance) => {
     const stationsResponse = await instance.get(
