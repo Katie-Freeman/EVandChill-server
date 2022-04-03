@@ -9,8 +9,8 @@ const parseSuccessObject = (user) => {
         { username: user.username, id: user._id },
         process.env.JWT
     );
-    const { email, _id: id, username } = user;
-    const userResp = { email, id, username };
+    const { email, _id: id, username, reviews, favorites } = user;
+    const userResp = { email, id, username, reviews, favorites };
 
     return {
         success: true,
