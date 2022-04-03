@@ -1,4 +1,4 @@
-const getAndSanitizeStationsResponse = async (location) => {
+const getAndSanitizeStationsResponse = async (location, instance) => {
     const stationsResponse = await instance.get(
         `&latitude=${location.lat}&longitude=${location.lng}`
     );
