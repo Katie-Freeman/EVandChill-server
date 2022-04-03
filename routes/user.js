@@ -83,8 +83,6 @@ router.post("/register", async (req, res) => {
                     password: hash,
                 });
                 newUser.save((error) => {
-                    console.log(newUser);
-                    console.log(newUser._id.toString());
                     if (error) {
                         res.status(500).json({
                             success: false,

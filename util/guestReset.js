@@ -41,7 +41,24 @@ const task = new Task(
                         _id: "6248fb5ee3c134faa1968f32",
                     },
                 ],
-                reviews: [],
+                reviews: [
+                    {
+                        stationId: 158529,
+                        review: "Would charge here again!",
+                        rating: 4,
+                        isWorking: true,
+                        user: "623de9958c010352ed1e3958",
+                        _id: "6249eddcb0584ca92047ac95",
+                    },
+                    {
+                        stationId: 141473,
+                        review: "Great station! Unfortunately no nearby entertainment.",
+                        rating: 3,
+                        isWorking: true,
+                        user: "623de9958c010352ed1e3958",
+                        _id: "6249ef4bb0584ca92047aca3",
+                    },
+                ],
             },
             {},
             () => console.log("Guest account reset")
@@ -50,6 +67,6 @@ const task = new Task(
     (err) => console.log(err)
 );
 
-const guestJob = new SimpleIntervalJob({ minutes: 30 }, task);
+const guestJob = new SimpleIntervalJob({ minutes: 5 }, task);
 
 module.exports = { scheduler, guestJob };

@@ -45,7 +45,10 @@ router.post("/stations", async (req, res) => {
                         response.length === 0
                     ) {
                         const sanitizedStations =
-                            await getAndSanitizeStationsResponse(location);
+                            await getAndSanitizeStationsResponse(
+                                location,
+                                instance
+                            );
                         stations.dateUpdated = Date.now();
                         stations.response = sanitizedStations;
                         stations.save();
@@ -56,7 +59,10 @@ router.post("/stations", async (req, res) => {
                     }
                 } else {
                     const sanitizedStations =
-                        await getAndSanitizeStationsResponse(location);
+                        await getAndSanitizeStationsResponse(
+                            location,
+                            instance
+                        );
                     StationResult.create({
                         response: sanitizedStations,
                         dateUpdated: Date.now(),
@@ -128,8 +134,6 @@ router.get("/id/:stationId", async (req, res) => {
 });
 
 router.get("/id/:stationId/amenities", async (req, res) => {
-    console.log(req.params.stationId);
-    console.log(typeof req.params.stationId);
     Station.findOne(
         { externalId: req.params.stationId },
         async (err, dbStation) => {
@@ -223,7 +227,6 @@ router.post("/:stationId/add-review", validateJwt, async (req, res) => {
             });
             station.save();
 
-
             const userResponse = await user.reviews.push({
                 stationId: stationNumber,
                 user: req.userId,
@@ -243,7 +246,6 @@ router.post("/:stationId/add-review", validateJwt, async (req, res) => {
                 throw new Error();
             }
         } catch (error) {
-            console.log(error);
             return res.status(400).json({
                 success: false,
                 message: "Failed to save review",
