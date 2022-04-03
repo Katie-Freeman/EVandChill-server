@@ -204,10 +204,12 @@ router.get("/id/:stationId", async (req, res) => {
 });
 
 router.get("/id/:stationId/amenities", async (req, res) => {
+    console.log(req.params.stationId);
+    console.log(typeof req.params.stationId);
     Station.findOne(
         { externalId: req.params.stationId },
         async (err, dbStation) => {
-            if (err) {
+            if (!dbStation) {
                 return res.status(400).json({
                     success: false,
                     message: "Error retrieving nearby places",
