@@ -267,7 +267,7 @@ router.post('/:stationId/add-review', async(req, res) => {
     const station = await Station.findOne({externalId: stationNumber});
 
     if (user && station) {
-        console.log('STATION', station);
+        console.log('STATION-SERVER', station);
         try{
            const stationResponse = await station.reviews.push({
             user: user,
