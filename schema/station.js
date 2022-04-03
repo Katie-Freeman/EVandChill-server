@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-const findOrCreate = require("mongoose-find-or-create");
 
 const stationSchema = new mongoose.Schema({
-
     externalId: String, // id from OCM
     lastUpdated: String, // OCM DataProvider.DateLastImported
     name: String,
     address: String,
+    cityStateZip: String,
     latitude: Number, // OCM lat/lng - rounded to nearest tenth
     longitude: Number,
     plugTypes: [{}],
@@ -32,8 +31,6 @@ const stationSchema = new mongoose.Schema({
         stores: [],
     },
 });
-
-stationSchema.plugin(findOrCreate);
 
 const Station = mongoose.model("Station", stationSchema);
 
