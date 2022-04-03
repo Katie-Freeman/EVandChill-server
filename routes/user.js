@@ -5,7 +5,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../schema/user");
 
 const parseSuccessObject = (user) => {
-    const token = jwt.sign({ username: user.username }, process.env.JWT);
+    const token = jwt.sign(
+        { username: user.username, id: user._id },
+        process.env.JWT
+    );
     const { email, _id: id, username } = user;
     const userResp = { email, id, username };
 
