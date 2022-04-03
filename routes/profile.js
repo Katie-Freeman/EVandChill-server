@@ -56,7 +56,8 @@ router.get("/:username/my-reviews", validateJwt, async (req, res) => {
     }
 });
 
-router.delete("/reviews", async (req, res) => {
+
+router.delete("/:username/reviews", async (req, res) => {
     const { reviewId, userId, stationId } = req.body;
     const userSuccess = await User.updateOne(
         {
