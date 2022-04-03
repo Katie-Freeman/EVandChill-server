@@ -17,8 +17,6 @@ router.get('/:username/my-favorites', async (req, res) => {
 
 router.delete("/favorites", async (req, res) => {
     const { favoriteId, userId } = req.body
-    console.log(favoriteId)
-    console.log(userId)
 
     const success = await User.updateOne({
         _id: userId
