@@ -45,7 +45,10 @@ router.post("/stations", async (req, res) => {
                         response.length === 0
                     ) {
                         const sanitizedStations =
-                            await getAndSanitizeStationsResponse(location);
+                            await getAndSanitizeStationsResponse(
+                                location,
+                                instance
+                            );
                         stations.dateUpdated = Date.now();
                         stations.response = sanitizedStations;
                         stations.save();
@@ -56,7 +59,10 @@ router.post("/stations", async (req, res) => {
                     }
                 } else {
                     const sanitizedStations =
-                        await getAndSanitizeStationsResponse(location);
+                        await getAndSanitizeStationsResponse(
+                            location,
+                            instance
+                        );
                     StationResult.create({
                         response: sanitizedStations,
                         dateUpdated: Date.now(),
