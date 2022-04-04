@@ -214,7 +214,6 @@ router.post("/:stationId/add-review", validateJwt, async (req, res) => {
     const review = req.body.review;
     const isWorking = req.body.isWorking;
     const rating = parseInt(req.body.rating);
-    const stationName = req.body.stationName;
 
     const user = await User.findById(req.userId);
     const station = await Station.findOne({ externalId: stationNumber });
@@ -230,7 +229,7 @@ router.post("/:stationId/add-review", validateJwt, async (req, res) => {
 
             const userResponse = await user.reviews.push({
                 stationId: stationNumber,
-                stationName: stationName,
+                stationName: station.name,
                 user: req.userId,
                 review: review,
                 isWorking: isWorking,
