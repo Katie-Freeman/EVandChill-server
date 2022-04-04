@@ -65,16 +65,16 @@ router.delete("/:username/reviews", validateJwt, async (req, res) => {
         const station = await Station.findOne({ externalId: stationId });
         if (user && station) {
             const reviewToDelete = user.reviews.find((review) => {
-                console.log(review);
                 return review._id.toString() === reviewId;
             });
-            console.log(reviewToDelete);
+
             if (!reviewToDelete) throw new Error();
-            const newUserReviews = user.reviews.filter((review) => {
+
+            user.reviews = user.reviews.filter((review) => {
                 return review._id.toString() !== reviewId;
             });
-            user.reviews = newUserReviews;
             await user.save();
+
             station.reviews = station.reviews.filter(
                 (review) =>
                     !(
@@ -83,12 +83,12 @@ router.delete("/:username/reviews", validateJwt, async (req, res) => {
                     )
             );
             await station.save();
+
             res.json({ success: true, message: "Review deleted" });
         } else {
             throw new Error();
         }
-    } catch (err) {
-        console.log(err);
+    } catch {
         res.status(400).json({
             success: false,
             message: "unable to remove review",
