@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema({
     reviews: [
         {
             stationId: Number,
+            stationName: String,
             review: String,
             rating: Number,
             isWorking: Boolean,
