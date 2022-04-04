@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const User = require("../schema/user");
+const Station = require("../schema/station");
 const bcrypt = require("bcrypt");
 const validateJwt = require("../middleware/validateJwt");
 
@@ -56,26 +57,42 @@ router.get("/:username/my-reviews", validateJwt, async (req, res) => {
     }
 });
 
+router.delete("/:username/reviews", validateJwt, async (req, res) => {
+    const { reviewId, stationId } = req.body;
 
-router.delete("/:username/reviews", async (req, res) => {
-    const { reviewId, userId, stationId } = req.body;
-    const userSuccess = await User.updateOne(
-        {
-            _id: userId,
-        },
-        { $pullAll: { reviews: [{ " _id": reviewId }] } }
-    );
-    const stationSuccess = await Station.updateOne(
-        {
-            externalId: String(stationId),
-        },
-        { $pullAll: { reviews: [{ _id: reviewId }] } }
-    );
-
-    if (userSuccess && stationSuccess) {
-        res.json({ userSuccess, stationSuccess });
-    } else {
-        res.json({ error: "Could not update" });
+    try {
+        const user = await User.findById(req.userId);
+        const station = await Station.findOne({ externalId: stationId });
+        if (user && station) {
+            const reviewToDelete = user.reviews.find((review) => {
+                console.log(review);
+                return review._id.toString() === reviewId;
+            });
+            console.log(reviewToDelete);
+            if (!reviewToDelete) throw new Error();
+            const newUserReviews = user.reviews.filter((review) => {
+                return review._id.toString() !== reviewId;
+            });
+            user.reviews = newUserReviews;
+            await user.save();
+            station.reviews = station.reviews.filter(
+                (review) =>
+                    !(
+                        review.user.toString() === req.userId &&
+                        review.review === reviewToDelete.review
+                    )
+            );
+            await station.save();
+            res.json({ success: true, message: "Review deleted" });
+        } else {
+            throw new Error();
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(400).json({
+            success: false,
+            message: "unable to remove review",
+        });
     }
 });
 
