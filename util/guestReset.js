@@ -44,6 +44,7 @@ const task = new Task(
                 reviews: [
                     {
                         stationId: 158529,
+                        stationName: "PIVET",
                         review: "Would charge here again!",
                         rating: 4,
                         isWorking: true,
@@ -52,6 +53,7 @@ const task = new Task(
                     },
                     {
                         stationId: 141473,
+                        stationName: "COLUMBIA HONDA",
                         review: "Great station! Unfortunately no nearby entertainment.",
                         rating: 3,
                         isWorking: true,
